@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+{% block title %}AI Recommendations - SmartVax{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+  <div class="page-header">
+    <div class="container">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div>
+          <h1 class="page-title">
+            <i class="bi bi-stars text-primary"></i> AI Recommendations
+          </h1>
+          <p class="page-subtitle">
+            Personalized vaccine recommendations for
+            <strong>{{ current_user.name }}</strong> &nbsp;·&nbsp;
+            Age: <strong>{{ age_years }} years ({{ age_months }} months)</strong>
+          </p>
+        </div>
+        <a href="{{ url_for('download_report') }}" class="btn-success-custom">
+          <i class="bi bi-file-earmark-pdf"></i> PDF Report
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- ══ AI PREDICTION PANEL ══ -->
+    <div class="row g-4 mb-4">
+      <div class="col-lg-8">
+        <div class="dash-card">
+          <div class="dash-card-header">
+            <span class="dash-card-title">
+              <i class="bi bi-cpu text-primary"></i> Missed Dose Risk Prediction
+            </span>
+            <span class="badge rounded-pill px-3 py-2
+              {% if prediction.is_high_risk %}bg-danger{% else %}bg-success{% endif %}">
+              <i class="bi {% if prediction.is_high_risk %}bi-exclamation-triangle-fill
+              {% else %}bi-check-circle-fill{% endif %}"></i>
+              {{ prediction.risk_level }}
+            </span>
+          </div>
+          <div class="dash-card-body">
+            <div class="row g-3 mb-4 text-center">
+              <!-- Risk Score -->
+              <div class="col-sm-3 col-6">
+                <div class="p-3 rounded-3" style="background:{% if prediction.is_high_risk %}#fef2f2{% else %}#f0fdf4{% endif %};">
+                  <div style="font-size:1.9rem;font-weight:800;
+                    color:{% if prediction.is_high_risk %}var(--danger){% else %}var(--secondary){% endif %};">
+                    {{ prediction.risk_score }}%
+                  </div>
+                  <div style="font-size:0.75rem;color:var(--gray);">Risk Score</div>
+                  <span class="badge mt-1
+                    {% if prediction.is_high_risk %}bg-danger{% else %}bg-success{% endif %}
+                    bg-opacity-15
+                    {% if prediction.is_high_risk %}text-danger{% else %}text-success{% endif %}"
+                    style="font-size:0.68rem;">
+                    {{ prediction.confidence_label }}
+                  </span>
+                </div>
+              </div>
+              <!-- Confidence -->
+              <div class="col-sm-3 col-6">
+                <div class="p-3 rounded-3" style="background:#eff6ff;">
+                  <div style="font-size:1.9rem;font-weight:800;color:#2563eb;">
+                    {{ prediction.confidence }}%
+                  </div>
+                  <div style="font-size:0.75rem;color:var(--gray);">Model Confidence</div>
+                  <div class="progress mt-2" style="height:4px;border-radius:4px;">
+                    <div class="progress-bar bg-primary" style="width:{{ prediction.confidence }}%"></div>
+                  </div>
+                </div>
+              </div>
+              <!-- Completion Rate -->
+              <div class="col-sm-3 col-6">
+                <div class="p-3 rounded-3" style="background:#f0fdf4;">
+                  <div style="font-size:1.9rem;font-weight:800;color:var(--secondary);">
+                    {{ prediction.completion_rate }}%
+                  </div>
+                  <div style="font-size:0.75rem;color:var(--gray);">Completion Rate</div>
+                  <div class="progress mt-2" style="height:4px;border-radius:4px;">
+                    <div class="progress-bar bg-success"
+                      style="width:{{ prediction.completion_rate }}%"></div>
+                  </div>
+                </div>
+              </div>
+              <!-- Missed / Overdue -->
+              <div class="col-sm-3 col-6">
+                <div class="p-3 rounded-3"
+                  style="background:{% if prediction.missed_count > 0 %}#fef2f2{% else %}#f0fdf4{% endif %};">
+                  <div style="font-size:1.9rem;font-weight:800;
+                    color:{% if prediction.missed_count > 0 %}var(--danger){% else %}var(--secondary){% endif %};">
+                    {{ prediction.missed_count }}
+                  </div>
+                  <div style="font-size:0.75rem;color:var(--gray);">Overdue Vaccines</div>
+                  <span class="badge mt-1
+                    {% if prediction.missed_count > 0 %}bg-danger text-white{% else %}bg-success text-white{% endif %}"
+                    style="font-size:0.68rem;">
+                    {% if prediction.missed_count > 0 %}Act Now{% else %}On Track{% endif %}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Model info -->
+            {% if prediction.model_accuracy %}
+            <div class="d-flex align-items-center gap-2 p-2 rounded mb-3"
+              style="background:#f8fafc;border:1px solid #e2e8f0;font-size:0.8rem;color:#475569;">
+              <i class="bi bi-robot text-primary"></i>
+              <span>
+                Algorithm: <strong>Random Forest Classifier</strong> &nbsp;·&nbsp;
+                Training size: 1,500 synthetic records &nbsp;·&nbsp;
+                Approx. accuracy: <strong>~{{ prediction.model_accuracy }}%</strong>
+              </span>
+            </div>
+            {% endif %}
+
+            <!-- AI Recommendations list -->
+            <h6 style="font-weight:700;margin-bottom:0.75rem;font-size:0.9rem;">
+              <i class="bi bi-lightbulb-fill text-warning"></i> Personalized Recommendations
+            </h6>
+            {% for rec in prediction.recommendations %}
+            <div class="d-flex align-items-start gap-2 mb-2 p-2 rounded"
+              style="background:#f8fafc;font-size:0.875rem;color:var(--dark-3);">
+              <span>{{ rec }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Prediction History -->
+      <div class="col-lg-4">
+        <div class="dash-card h-100">
+          <div class="dash-card-header">
+            <span class="dash-card-title">
+              <i class="bi bi-graph-up text-primary"></i> Prediction History
+            </span>
+          </div>
+          <div class="dash-card-body">
+            {% if prediction_history %}
+            {% for ph in prediction_history %}
+            <div class="d-flex align-items-center justify-content-between mb-3 pb-2"
+              style="border-bottom:1px solid var(--border);">
+              <div>
+                <div style="font-size:0.82rem;font-weight:600;color:var(--dark);">
+                  {{ ph.prediction_date.strftime('%d %b %Y') }}
+                </div>
+                <div style="font-size:0.73rem;color:var(--gray);">
+                  {{ ph.prediction_date.strftime('%H:%M') }}
+                </div>
+              </div>
+              <div class="text-end">
+                <span class="badge {% if ph.risk_level == 'High Risk' %}bg-danger{% else %}bg-success{% endif %}"
+                  style="font-size:0.72rem;">
+                  {{ ph.risk_level }}
+                </span>
+                {% if ph.risk_score %}
+                <div style="font-size:0.75rem;color:var(--gray);margin-top:2px;">
+                  {{ ph.risk_score }}%
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state">
+              <div class="empty-state-icon">📊</div>
+              <div class="empty-state-title">No history yet</div>
+              <div class="empty-state-desc">Predictions will appear here.</div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ DUE NOW — HIGH PRIORITY ══ -->
+    {% if recs.due_now_detailed %}
+    <div class="dash-card mb-4">
+      <div class="dash-card-header">
+        <span class="dash-card-title">
+          <i class="bi bi-exclamation-octagon-fill text-danger"></i>
+          🔴 High Priority — Overdue Vaccines
+          <span class="badge bg-danger ms-2">{{ recs.due_now_detailed | length }}</span>
+        </span>
+        <span style="font-size:0.78rem;color:var(--gray);">Schedule immediately</span>
+      </div>
+      <div class="dash-card-body">
+        <div class="row g-3">
+          {% for item in recs.due_now_detailed %}
+          {% set v = item.vaccine %}
+          <div class="col-md-6">
+            <div class="p-3 rounded-3 h-100"
+              style="background:#fef2f2;border:1px solid #fecaca;">
+              <div class="d-flex align-items-start gap-3">
+                <div style="font-size:1.5rem;">💉</div>
+                <div class="flex-grow-1">
+                  <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                    <strong style="font-size:0.95rem;color:#991b1b;">{{ v.vaccine_name }}</strong>
+                    <span class="badge bg-danger" style="font-size:0.68rem;">🔴 High Priority</span>
+                  </div>
+                  <div style="font-size:0.8rem;color:#b91c1c;font-weight:600;">
+                    Overdue by {{ item.days_overdue_display }}
+                  </div>
+                  <div style="font-size:0.78rem;color:#6b7280;margin-top:4px;">
+                    Recommended at {{ v.get_recommended_age_display() }}
+                  </div>
+                  {% if v.disease_prevented %}
+                  <div style="font-size:0.78rem;color:#6b7280;">
+                    Prevents: {{ v.disease_prevented }}
+                  </div>
+                  {% endif %}
+                  {% if v.description %}
+                  <div style="font-size:0.75rem;color:#9ca3af;margin-top:4px;">
+                    {{ v.description[:100] }}{% if v.description|length > 100 %}…{% endif %}
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ══ UPCOMING — MEDIUM PRIORITY ══ -->
+    {% if recs.upcoming_detailed %}
+    <div class="dash-card mb-4">
+      <div class="dash-card-header">
+        <span class="dash-card-title">
+          <i class="bi bi-calendar-event text-warning"></i>
+          🟡 Medium Priority — Upcoming Vaccines
+          <span class="badge bg-warning text-dark ms-2">{{ recs.upcoming_detailed | length }}</span>
+        </span>
+        <span style="font-size:0.78rem;color:var(--gray);">Due within 3 months</span>
+      </div>
+      <div class="dash-card-body">
+        <div class="row g-3">
+          {% for item in recs.upcoming_detailed %}
+          {% set v = item.vaccine %}
+          <div class="col-md-6">
+            <div class="p-3 rounded-3 h-100"
+              style="background:#fffbeb;border:1px solid #fde68a;">
+              <div class="d-flex align-items-start gap-3">
+                <div style="font-size:1.5rem;">📅</div>
+                <div class="flex-grow-1">
+                  <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                    <strong style="font-size:0.95rem;color:#92400e;">{{ v.vaccine_name }}</strong>
+                    <span class="badge bg-warning text-dark" style="font-size:0.68rem;">🟡 Medium</span>
+                  </div>
+                  <div style="font-size:0.8rem;color:#d97706;font-weight:600;">
+                    Due in {{ item.days_until_display }}
+                  </div>
+                  <div style="font-size:0.78rem;color:#6b7280;margin-top:4px;">
+                    Recommended at {{ v.get_recommended_age_display() }}
+                  </div>
+                  {% if v.disease_prevented %}
+                  <div style="font-size:0.78rem;color:#6b7280;">
+                    Prevents: {{ v.disease_prevented }}
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ══ FUTURE — LOW PRIORITY ══ -->
+    {% if recs.future_detailed %}
+    <div class="dash-card mb-4">
+      <div class="dash-card-header">
+        <span class="dash-card-title">
+          <i class="bi bi-calendar3 text-info"></i>
+          🔵 Low Priority — Future Vaccines
+          <span class="badge bg-info text-dark ms-2">{{ recs.future_detailed | length }}</span>
+        </span>
+        <span style="font-size:0.78rem;color:var(--gray);">Scheduled for later</span>
+      </div>
+      <div class="dash-card-body">
+        <div class="row g-3">
+          {% for item in recs.future_detailed[:8] %}
+          {% set v = item.vaccine %}
+          <div class="col-md-6 col-lg-4">
+            <div class="p-3 rounded-3 h-100"
+              style="background:#eff6ff;border:1px solid #bfdbfe;">
+              <div class="d-flex align-items-start gap-2">
+                <div style="font-size:1.2rem;">🔵</div>
+                <div class="flex-grow-1">
+                  <div class="fw-bold" style="font-size:0.88rem;color:#1e40af;">
+                    {{ v.vaccine_name }}
+                  </div>
+                  <div style="font-size:0.75rem;color:#3b82f6;font-weight:600;margin-top:2px;">
+                    In {{ item.days_until_display }}
+                  </div>
+                  <div style="font-size:0.73rem;color:#6b7280;">
+                    At {{ v.get_recommended_age_display() }}
+                  </div>
+                  {% if v.disease_prevented %}
+                  <div style="font-size:0.73rem;color:#9ca3af;">{{ v.disease_prevented }}</div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ══ COMPLETED ══ -->
+    {% if recs.completed %}
+    <div class="dash-card mb-4">
+      <div class="dash-card-header">
+        <span class="dash-card-title">
+          <i class="bi bi-check-circle-fill text-success"></i>
+          ✅ Completed Vaccines
+          <span class="badge bg-success ms-2">{{ recs.completed | length }}</span>
+        </span>
+        <a href="{{ url_for('history') }}" style="font-size:0.8rem;color:var(--primary);">
+          View History →
+        </a>
+      </div>
+      <div class="dash-card-body">
+        <div class="d-flex flex-wrap gap-2">
+          {% for v in recs.completed %}
+          <span class="badge rounded-pill px-3 py-2"
+            style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;font-size:0.8rem;">
+            <i class="bi bi-check2-circle me-1"></i>{{ v.vaccine_name }}
+          </span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+{% block title %}Register - SmartVax{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card fade-in-up" style="max-width:560px;">
+    <div class="auth-header">
+      <div class="auth-logo">🛡️</div>
+      <h1 class="auth-title">Create Account</h1>
+      <p class="auth-subtitle">Join SmartVax and take control of your vaccination health</p>
+    </div>
+    <div class="auth-body">
+      <form method="POST" action="{{ url_for('register') }}" id="registerForm" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="row g-3 mb-3">
+          <!-- Full Name -->
+          <div class="col-12">
+            <label class="form-label" for="name">
+              <i class="bi bi-person"></i> Full Name
+            </label>
+            <div class="input-icon-wrap">
+              <i class="bi bi-person"></i>
+              <input type="text" class="form-control" id="name" name="name"
+                placeholder="Enter your full name" required autocomplete="name">
+            </div>
+          </div>
+
+          <!-- Email -->
+          <div class="col-md-6">
+            <label class="form-label" for="email">
+              <i class="bi bi-envelope"></i> Email Address
+            </label>
+            <div class="input-icon-wrap">
+              <i class="bi bi-envelope"></i>
+              <input type="email" class="form-control" id="email" name="email"
+                placeholder="your@email.com" required autocomplete="email">
+            </div>
+          </div>
+
+          <!-- Phone Number -->
+          <div class="col-md-6">
+            <label class="form-label" for="phone_number">
+              <i class="bi bi-phone"></i> Mobile Number
+            </label>
+            <div class="input-icon-wrap">
+              <i class="bi bi-phone"></i>
+              <input type="tel" class="form-control" id="phone_number" name="phone_number"
+                placeholder="+91 99999 99999" required autocomplete="tel">
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div class="col-md-6">
+            <label class="form-label" for="password">
+              <i class="bi bi-lock"></i> Password
+            </label>
+            <div class="input-icon-wrap" style="position:relative;">
+              <i class="bi bi-lock"></i>
+              <input type="password" class="form-control" id="password" name="password"
+                placeholder="Min 8 characters" required minlength="8"
+                autocomplete="new-password" oninput="checkPasswordStrength(this.value)">
+              <button type="button" class="pw-toggle" onclick="togglePw('password', this)"
+                title="Show/hide password" tabindex="-1">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
+
+            <!-- Live password strength meter -->
+            <div id="pwStrengthBar" class="password-strength-bar mt-2" style="display:none;">
+              <div class="strength-track">
+                <div id="pwStrengthFill" class="strength-fill"></div>
+              </div>
+              <div id="pwStrengthLabel" class="strength-label"></div>
+              <ul id="pwRules" class="pw-rules mt-1 mb-0"></ul>
+            </div>
+          </div>
+
+          <!-- Confirm Password -->
+          <div class="col-md-6">
+            <label class="form-label" for="confirm_password">
+              <i class="bi bi-lock-fill"></i> Confirm Password
+            </label>
+            <div class="input-icon-wrap" style="position:relative;">
+              <i class="bi bi-lock-fill"></i>
+              <input type="password" class="form-control" id="confirm_password"
+                name="confirm_password" placeholder="Repeat password" required
+                autocomplete="new-password" oninput="checkConfirm(this)">
+              <button type="button" class="pw-toggle" onclick="togglePw('confirm_password', this)"
+                title="Show/hide password" tabindex="-1">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
+            <div id="confirmMsg" style="font-size:0.75rem;margin-top:4px;"></div>
+          </div>
+
+          <!-- Date of Birth -->
+          <div class="col-12">
+            <label class="form-label" for="date_of_birth">
+              <i class="bi bi-calendar-date"></i> Your Date of Birth
+            </label>
+            <input type="date" class="form-control" id="date_of_birth"
+              name="date_of_birth" required max="{{ now.strftime('%Y-%m-%d') }}">
+          </div>
+        </div>
+
+        <!-- Optional Child Profile -->
+        <div class="mb-3">
+          <div class="form-check form-switch mb-2">
+            <input class="form-check-input" type="checkbox" id="hasChildToggle">
+            <label class="form-check-label text-muted" for="hasChildToggle" style="font-size:0.87rem;">
+              <i class="bi bi-people-fill"></i> Add child profile (optional)
+            </label>
+          </div>
+          <div id="childFields" style="display:none;" class="border rounded p-3 bg-light">
+            <div class="row g-2">
+              <div class="col-md-6">
+                <label class="form-label" for="child_name" style="font-size:0.8rem;">
+                  Child's Name
+                </label>
+                <input type="text" class="form-control form-control-sm" id="child_name"
+                  name="child_name" placeholder="Child's full name">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="child_dob" style="font-size:0.8rem;">
+                  Child's Date of Birth
+                </label>
+                <input type="date" class="form-control form-control-sm" id="child_dob"
+                  name="child_dob" max="{{ now.strftime('%Y-%m-%d') }}">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Terms -->
+        <div class="mb-3">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="terms" required>
+            <label class="form-check-label text-muted" for="terms" style="font-size:0.82rem;">
+              I agree that SmartVax is a <strong>decision-support tool</strong>, not a replacement for
+              professional medical advice.
+            </label>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary-custom w-100" id="submitBtn"
+          style="border-radius:10px;padding:13px;">
+          <i class="bi bi-person-plus-fill"></i> Create Account
+        </button>
+      </form>
+
+      <div class="text-center mt-4">
+        <p class="text-muted" style="font-size:0.875rem;">
+          Already have an account?
+          <a href="{{ url_for('login') }}" style="color:var(--primary);font-weight:600;">Login here</a>
+        </p>
+        <a href="{{ url_for('index') }}" class="text-muted" style="font-size:0.8rem;">
+          <i class="bi bi-arrow-left"></i> Back to Home
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+  .pw-toggle {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: #9ca3af; cursor: pointer; padding: 0;
+    font-size: 1rem; z-index: 5;
+  }
+  .pw-toggle:hover { color: #2563eb; }
+  .strength-track {
+    height: 5px; background: #e2e8f0; border-radius: 4px; overflow: hidden;
+  }
+  .strength-fill {
+    height: 100%; border-radius: 4px; transition: width 0.35s ease, background 0.35s ease;
+  }
+  .strength-label { font-size: 0.72rem; font-weight: 700; margin-top: 3px; }
+  .pw-rules { list-style: none; padding: 0; margin: 0; }
+  .pw-rules li {
+    font-size: 0.72rem; color: #9ca3af; display: flex; align-items: center; gap: 4px;
+    margin-bottom: 1px; transition: color 0.2s;
+  }
+  .pw-rules li.pass { color: #10b981; }
+  .pw-rules li.fail { color: #ef4444; }
+</style>
+
+<script>
+  // ── Child profile toggle ───────────────────────────────────────────────────
+  document.getElementById('hasChildToggle').addEventListener('change', function () {
+    document.getElementById('childFields').style.display = this.checked ? 'block' : 'none';
+  });
+
+  // ── Password strength checker ──────────────────────────────────────────────
+  const rules = [
+    { id: 'r-len',     test: p => p.length >= 8,                      label: 'At least 8 characters' },
+    { id: 'r-upper',  test: p => /[A-Z]/.test(p),                     label: 'One uppercase letter (A-Z)' },
+    { id: 'r-number', test: p => /\d/.test(p),                        label: 'One number (0-9)' },
+    { id: 'r-special',test: p => /[!@#$%^&*(),.?":{}|<>_\-\+\=\[\]\\\/]/.test(p),
+      label: 'One special character (!@#$…)' },
+  ];
+
+  function checkPasswordStrength(pw) {
+    const barEl    = document.getElementById('pwStrengthBar');
+    const fillEl   = document.getElementById('pwStrengthFill');
+    const labelEl  = document.getElementById('pwStrengthLabel');
+    const rulesEl  = document.getElementById('pwRules');
+
+    if (!pw) { barEl.style.display = 'none'; return; }
+    barEl.style.display = 'block';
+
+    // Render rules list
+    rulesEl.innerHTML = rules.map(r => {
+      const pass = r.test(pw);
+      return `<li class="${pass ? 'pass' : 'fail'}">
+        <i class="bi bi-${pass ? 'check-circle-fill' : 'x-circle'}"></i>${r.label}
+      </li>`;
+    }).join('');
+
+    const passCount = rules.filter(r => r.test(pw)).length;
+    const pct       = (passCount / rules.length) * 100;
+    const config    = [
+      null,
+      { color: '#ef4444', label: 'Weak',      w: '25%' },
+      { color: '#f59e0b', label: 'Fair',       w: '50%' },
+      { color: '#3b82f6', label: 'Good',       w: '75%' },
+      { color: '#10b981', label: 'Strong ✅', w: '100%' },
+    ][passCount] || { color: '#ef4444', label: 'Too weak', w: '5%' };
+
+    fillEl.style.width      = config.w;
+    fillEl.style.background = config.color;
+    labelEl.textContent     = config.label;
+    labelEl.style.color     = config.color;
+  }
+
+  // ── Confirm password match check ───────────────────────────────────────────
+  function checkConfirm(el) {
+    const pw  = document.getElementById('password').value;
+    const msg = document.getElementById('confirmMsg');
+    if (!el.value) { msg.textContent = ''; return; }
+    if (el.value === pw) {
+      el.style.borderColor = '#10b981';
+      msg.innerHTML = '<span style="color:#10b981;"><i class="bi bi-check-circle-fill"></i> Passwords match</span>';
+    } else {
+      el.style.borderColor = '#ef4444';
+      msg.innerHTML = '<span style="color:#ef4444;"><i class="bi bi-x-circle"></i> Passwords do not match</span>';
+    }
+  }
+
+  // ── Show/hide password toggle ──────────────────────────────────────────────
+  function togglePw(inputId, btn) {
+    const inp = document.getElementById(inputId);
+    const icon = btn.querySelector('i');
+    if (inp.type === 'password') {
+      inp.type = 'text';
+      icon.className = 'bi bi-eye-slash';
+    } else {
+      inp.type = 'password';
+      icon.className = 'bi bi-eye';
+    }
+  }
+
+  // ── Form submit with spinner ───────────────────────────────────────────────
+  document.getElementById('registerForm').addEventListener('submit', function (e) {
+    const pw  = document.getElementById('password').value;
+    const cpw = document.getElementById('confirm_password').value;
+    const allPass = rules.every(r => r.test(pw));
+
+    if (!allPass) {
+      e.preventDefault();
+      SmartVax.toast('Password does not meet the strength requirements.', 'danger');
+      return;
+    }
+    if (pw !== cpw) {
+      e.preventDefault();
+      SmartVax.toast('Passwords do not match.', 'danger');
+      return;
+    }
+    SmartVax.showSpinner(document.getElementById('submitBtn'), 'Creating Account…');
+  });
+</script>
+{% endblock %}

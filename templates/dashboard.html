@@ -1,0 +1,549 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - SmartVax{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+  <!-- ══ Page Header ══ -->
+  <div class="page-header">
+    <div class="container">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div>
+          <h1 class="page-title">
+            <i data-lucide="layout-dashboard" class="text-primary"></i> Dashboard
+          </h1>
+          <p class="page-subtitle">
+            Welcome back, <strong>{{ current_user.name }}</strong>! &nbsp;|&nbsp;
+            Age: <strong>{{ "%.1f"|format(current_user.get_age_in_years()) }} years</strong>
+            {% if current_user.child_name %}
+            &nbsp;|&nbsp; Child: <strong>{{ current_user.child_name }}</strong>
+            {% endif %}
+          </p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap align-items-center">
+          <a href="{{ url_for('download_report') }}" class="btn-success-custom">
+            <i data-lucide="file-text"></i> PDF Report
+          </a>
+          <a href="{{ url_for('schedule') }}" class="btn-primary-custom"
+            style="padding:8px 18px;font-size:0.85rem;">
+            <i data-lucide="calendar"></i> View Schedule
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- ══ STAT CARDS ══ -->
+    <div class="row g-3 mb-4">
+      <!-- Total -->
+      <div class="col-6 col-lg-3 fade-in-up stagger-1">
+        <div class="stat-card primary">
+          <div class="stat-card-icon"><i data-lucide="shield"></i></div>
+          <div class="stat-card-value">{{ stats.total }}</div>
+          <div class="stat-card-label">Total Vaccines</div>
+          <div class="stat-card-change text-muted">
+            <i class="bi bi-arrow-up-circle-fill text-success"></i> Full schedule
+          </div>
+        </div>
+      </div>
+      <!-- Completed -->
+      <div class="col-6 col-lg-3 fade-in-up stagger-2">
+        <div class="stat-card success">
+          <div class="stat-card-icon"><i data-lucide="check-circle"></i></div>
+          <div class="stat-card-value">{{ stats.completed_count }}</div>
+          <div class="stat-card-label">Completed</div>
+          <div class="stat-card-change" style="color:var(--secondary)">
+            <i class="bi bi-check2-all"></i> {{ stats.completion_percentage }}% done
+          </div>
+        </div>
+      </div>
+      <!-- Overdue -->
+      <div class="col-6 col-lg-3 fade-in-up stagger-3">
+        <div class="stat-card danger">
+          <div class="stat-card-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+          <div class="stat-card-value">{{ stats.pending_count }}</div>
+          <div class="stat-card-label">Overdue</div>
+          <div class="stat-card-change text-danger">
+            <i class="bi bi-clock-fill"></i>
+            {% if stats.pending_count > 0 %}Action needed{% else %}All clear!{% endif %}
+          </div>
+        </div>
+      </div>
+      <!-- Upcoming -->
+      <div class="col-6 col-lg-3 fade-in-up stagger-4">
+        <div class="stat-card warning">
+          <div class="stat-card-icon"><i class="bi bi-calendar-check-fill"></i></div>
+          <div class="stat-card-value">{{ stats.upcoming_count }}</div>
+          <div class="stat-card-label">Upcoming</div>
+          <div class="stat-card-change text-warning">
+            <i class="bi bi-calendar-event"></i> Next 3 months
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ NEXT VACCINE DUE CARD ══ -->
+    {% if next_vaccine %}
+    <div class="mb-4 fade-in-up">
+      <div class="dash-card"
+        style="background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);border-left:4px solid #2563eb;">
+        <div class="dash-card-body d-flex align-items-center gap-3 flex-wrap">
+          <div style="font-size:2rem;">📅</div>
+          <div class="flex-grow-1">
+            <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;
+                        letter-spacing:0.05em;color:#1d4ed8;margin-bottom:2px;">
+              Next Vaccine Due
+            </div>
+            <div style="font-weight:700;font-size:1.05rem;color:#1e3a8a;">
+              {{ next_vaccine.vaccine.vaccine_name }}
+            </div>
+            <div style="font-size:0.83rem;color:#3730a3;margin-top:2px;">
+              {% if next_vaccine.days_until is defined and next_vaccine.days_until >= 0 %}
+                Due in <strong>{{ next_vaccine.days_until_display }}</strong>
+                ({{ next_vaccine.vaccine.get_recommended_age_display() }})
+              {% elif next_vaccine.days_overdue is defined %}
+                <span class="text-danger fw-bold">Overdue by {{ next_vaccine.days_overdue_display }}</span>
+              {% endif %}
+              {% if next_vaccine.vaccine.disease_prevented %}
+                &nbsp;·&nbsp; Prevents: {{ next_vaccine.vaccine.disease_prevented }}
+              {% endif %}
+            </div>
+          </div>
+          <span class="badge bg-{{ next_vaccine.priority_badge }} px-3 py-2" style="font-size:0.82rem;">
+            {{ next_vaccine.priority }} Priority
+          </span>
+          <a href="{{ url_for('schedule') }}" class="btn-primary-custom"
+            style="padding:8px 18px;font-size:0.85rem;">
+            View Schedule →
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ══ REMINDER ALERT BANNER (JS-injected) ══ -->
+    <div id="reminderBanner" class="mb-4" style="display:none;">
+      <div class="dash-card"
+        style="background:linear-gradient(135deg,#fffbeb 0%,#fef3c7 100%);border-left:4px solid #f59e0b;">
+        <div class="dash-card-body d-flex align-items-center gap-3 flex-wrap">
+          <div style="font-size:1.8rem;">🔔</div>
+          <div>
+            <div style="font-weight:700;font-size:0.95rem;color:#92400e;" id="reminderBannerTitle">
+              Upcoming Vaccine Reminders
+            </div>
+            <div style="font-size:0.83rem;color:#78350f;" id="reminderBannerText">Loading…</div>
+          </div>
+          <a href="{{ url_for('reminders_page') }}" class="ms-auto btn-primary-custom"
+            style="padding:8px 18px;font-size:0.85rem;background:#f59e0b;border-color:#f59e0b;">
+            <i class="bi bi-bell-fill"></i> Manage Reminders
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PROGRESS + AI RISK ROW ══ -->
+    <div class="row g-4 mb-4">
+
+      <!-- Progress Card -->
+      <div class="col-lg-5">
+        <div class="dash-card h-100">
+          <div class="dash-card-header">
+            <span class="dash-card-title">
+              <i class="bi bi-pie-chart-fill text-primary"></i> Vaccination Progress
+            </span>
+          </div>
+          <div class="dash-card-body">
+            <!-- Progress Bar -->
+            <div class="mb-3">
+              <div class="d-flex justify-content-between mb-1" style="font-size:0.85rem;font-weight:600;">
+                <span>Overall Completion</span>
+                <span style="color:var(--primary)">{{ stats.completion_percentage }}%</span>
+              </div>
+              <div class="progress" style="height:12px;border-radius:8px;background:#e2e8f0;">
+                <div class="progress-bar bg-primary" role="progressbar"
+                  style="width:{{ stats.completion_percentage }}%;border-radius:8px;
+                         background:linear-gradient(90deg,#2563eb,#7c3aed)!important;
+                         transition:width 1s ease;"
+                  aria-valuenow="{{ stats.completion_percentage }}" aria-valuemin="0" aria-valuemax="100">
+                </div>
+              </div>
+            </div>
+
+            <!-- Status Legend -->
+            <div class="d-flex gap-3 flex-wrap mb-3" style="font-size:0.8rem;">
+              <div class="d-flex align-items-center gap-1">
+                <span style="width:10px;height:10px;border-radius:50%;background:#10b981;display:inline-block;"></span>
+                Completed ({{ stats.completed_count }})
+              </div>
+              <div class="d-flex align-items-center gap-1">
+                <span style="width:10px;height:10px;border-radius:50%;background:#ef4444;display:inline-block;"></span>
+                Overdue ({{ stats.pending_count }})
+              </div>
+              <div class="d-flex align-items-center gap-1">
+                <span style="width:10px;height:10px;border-radius:50%;background:#2563eb;display:inline-block;"></span>
+                Upcoming ({{ stats.upcoming_count }})
+              </div>
+            </div>
+
+            <!-- Doughnut Chart -->
+            <div class="chart-container">
+              <canvas id="vaccineChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Risk Prediction Card -->
+      <div class="col-lg-7">
+        <div class="dash-card h-100">
+          <div class="dash-card-header">
+            <span class="dash-card-title">
+              <i class="bi bi-cpu text-primary"></i> AI Risk Prediction
+            </span>
+            <!-- Risk badge with color -->
+            <span class="badge rounded-pill px-3 py-2
+              {% if prediction.is_high_risk %}bg-danger{% else %}bg-success{% endif %}"
+              style="font-size:0.82rem;">
+              <i class="bi {% if prediction.is_high_risk %}bi-exclamation-triangle-fill
+              {% else %}bi-check-circle-fill{% endif %}"></i>
+              {{ prediction.risk_level }}
+            </span>
+          </div>
+          <div class="dash-card-body">
+
+            <!-- Stats Row -->
+            <div class="row g-3 mb-3 text-center">
+              <div class="col-4">
+                <div style="font-size:2rem;font-weight:800;
+                  color:{{ 'var(--danger)' if prediction.is_high_risk else 'var(--secondary)' }};">
+                  {{ prediction.risk_score }}%
+                </div>
+                <div style="font-size:0.78rem;color:var(--gray);">Risk Score</div>
+                <div class="badge bg-secondary bg-opacity-10 text-secondary mt-1"
+                  style="font-size:0.7rem;">{{ prediction.confidence_label }}</div>
+              </div>
+              <div class="col-4">
+                <div style="font-size:2rem;font-weight:800;color:var(--secondary);">
+                  {{ prediction.completion_rate }}%
+                </div>
+                <div style="font-size:0.78rem;color:var(--gray);">Completion Rate</div>
+                <!-- Mini progress -->
+                <div class="progress mt-1" style="height:4px;border-radius:4px;">
+                  <div class="progress-bar bg-success" style="width:{{ prediction.completion_rate }}%"></div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div style="font-size:2rem;font-weight:800;color:var(--primary);">
+                  {{ prediction.missed_count }}
+                </div>
+                <div style="font-size:0.78rem;color:var(--gray);">Overdue Vaccines</div>
+                <div class="badge {% if prediction.missed_count > 0 %}bg-danger{% else %}bg-success{% endif %}
+                  bg-opacity-15 {% if prediction.missed_count > 0 %}text-danger{% else %}text-success{% endif %}
+                  mt-1" style="font-size:0.7rem;">
+                  {% if prediction.missed_count > 0 %}Action Needed{% else %}On Track{% endif %}
+                </div>
+              </div>
+            </div>
+
+            {% if prediction.model_accuracy %}
+            <div class="d-flex align-items-center gap-2 mb-3 p-2 rounded"
+              style="background:#f0fdf4;font-size:0.78rem;color:#166534;">
+              <i class="bi bi-robot"></i>
+              <span>Model accuracy: <strong>~{{ prediction.model_accuracy }}%</strong>
+                (RandomForest, synthetic training data)</span>
+            </div>
+            {% endif %}
+
+            <hr style="border-color:var(--border);">
+            <h6 style="font-weight:700;margin-bottom:0.75rem;font-size:0.9rem;">
+              <i class="bi bi-lightbulb-fill text-warning"></i> AI Recommendations
+            </h6>
+            {% for rec in prediction.recommendations %}
+            <div class="d-flex align-items-start gap-2 mb-2" style="font-size:0.875rem;color:var(--dark-3);">
+              <span>{{ rec }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ OVERDUE + UPCOMING VACCINES ══ -->
+    <div class="row g-4">
+
+      <!-- Overdue Vaccines -->
+      <div class="col-lg-6">
+        <div class="dash-card">
+          <div class="dash-card-header">
+            <span class="dash-card-title">
+              <i class="bi bi-exclamation-circle-fill text-danger"></i> Overdue Vaccines
+            </span>
+            <a href="{{ url_for('schedule') }}" style="font-size:0.8rem;color:var(--primary);">View All →</a>
+          </div>
+          <div class="dash-card-body">
+            {% if due_now %}
+            {% for item in due_now %}
+            {% set v = item.vaccine %}
+            <div class="rec-vaccine-card">
+              <div class="rec-vaccine-icon" style="background:#fef2f2;color:var(--danger);">💉</div>
+              <div class="flex-grow-1">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                  <div class="rec-vaccine-name">{{ v.vaccine_name }}</div>
+                  <span class="badge bg-danger" style="font-size:0.7rem;">
+                    🔴 High Priority
+                  </span>
+                </div>
+                <div class="rec-vaccine-age">
+                  Recommended at {{ v.get_recommended_age_display() }}
+                </div>
+                {% if item.days_overdue %}
+                <div style="font-size:0.78rem;color:var(--danger);font-weight:600;">
+                  Overdue by {{ item.days_overdue_display }}
+                </div>
+                {% endif %}
+                {% if v.disease_prevented %}
+                <div class="rec-vaccine-disease text-muted" style="font-size:0.78rem;">
+                  {{ v.disease_prevented }}
+                </div>
+                {% endif %}
+              </div>
+              <div>
+                <button type="button" class="btn-success-custom"
+                  style="font-size:0.75rem;padding:5px 12px;" data-bs-toggle="modal"
+                  data-bs-target="#completeModal{{ v.id }}">
+                  Mark Done
+                </button>
+              </div>
+            </div>
+
+            <!-- Mark Complete Modal -->
+            <div class="modal fade" id="completeModal{{ v.id }}" tabindex="-1">
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title">Mark Vaccine Complete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+                  <form method="POST" action="{{ url_for('mark_complete', vaccine_id=v.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="modal-body">
+                      <p class="fw-bold">{{ v.vaccine_name }}</p>
+                      <p class="text-muted small">
+                        <span class="badge bg-danger me-1">🔴 Overdue</span>
+                        {{ v.disease_prevented }}
+                      </p>
+                      <div class="form-group mb-3">
+                        <label class="form-label">Date Taken</label>
+                        <input type="date" class="form-control" name="date_taken"
+                          value="{{ now.strftime('%Y-%m-%d') }}"
+                          max="{{ now.strftime('%Y-%m-%d') }}">
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">Notes (optional)</label>
+                        <textarea class="form-control" name="notes" rows="2"
+                          placeholder="e.g., No side effects"></textarea>
+                      </div>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary btn-sm"
+                        data-bs-dismiss="modal">Cancel</button>
+                      <button type="submit" class="btn-success-custom">✅ Confirm Complete</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state">
+              <div class="empty-state-icon">🎉</div>
+              <div class="empty-state-title">All caught up!</div>
+              <div class="empty-state-desc">No overdue vaccines at this time.</div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Upcoming Vaccines -->
+      <div class="col-lg-6">
+        <div class="dash-card">
+          <div class="dash-card-header">
+            <span class="dash-card-title">
+              <i class="bi bi-calendar-event-fill text-primary"></i> Upcoming Vaccines
+            </span>
+            <a href="{{ url_for('recommendations') }}" style="font-size:0.8rem;color:var(--primary);">
+              AI Recs →
+            </a>
+          </div>
+          <div class="dash-card-body">
+            {% if upcoming %}
+            {% for item in upcoming %}
+            {% set v = item.vaccine %}
+            <div class="rec-vaccine-card">
+              <div class="rec-vaccine-icon" style="background:var(--primary-light);color:var(--primary);">
+                📅
+              </div>
+              <div class="flex-grow-1">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                  <div class="rec-vaccine-name">{{ v.vaccine_name }}</div>
+                  <span class="badge bg-warning text-dark" style="font-size:0.7rem;">
+                    🟡 Medium Priority
+                  </span>
+                </div>
+                <div class="rec-vaccine-age">Due at {{ v.get_recommended_age_display() }}</div>
+                {% if item.days_until is defined %}
+                <div style="font-size:0.78rem;color:#d97706;font-weight:600;">
+                  In {{ item.days_until_display }}
+                </div>
+                {% endif %}
+                {% if v.disease_prevented %}
+                <div class="rec-vaccine-disease text-muted" style="font-size:0.78rem;">
+                  {{ v.disease_prevented }}
+                </div>
+                {% endif %}
+              </div>
+              <span class="status-badge upcoming">
+                <i class="bi bi-clock"></i> Soon
+              </span>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state">
+              <div class="empty-state-icon">📅</div>
+              <div class="empty-state-title">No upcoming vaccines</div>
+              <div class="empty-state-desc">in the next 3 months.</div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ LAST VACCINE INFO ══ -->
+    {% if last_vaccine %}
+    <div class="row mt-4">
+      <div class="col-12">
+        <div class="dash-card">
+          <div class="dash-card-body d-flex align-items-center gap-3 flex-wrap">
+            <div style="font-size:1.5rem;">🕐</div>
+            <div>
+              <div style="font-size:0.85rem;color:var(--gray);">Last Vaccination</div>
+              <div style="font-weight:700;color:var(--dark);">
+                {{ last_vaccine.vaccine.vaccine_name }}
+              </div>
+            </div>
+            {% if last_vaccine.date_taken %}
+            <div class="ms-3">
+              <div style="font-size:0.85rem;color:var(--gray);">Date Taken</div>
+              <div style="font-weight:700;color:var(--dark);">
+                {{ last_vaccine.date_taken.strftime('%B %d, %Y') }}
+              </div>
+            </div>
+            {% endif %}
+            <div class="ms-auto d-flex gap-2 flex-wrap">
+              <a href="{{ url_for('reminders_page') }}" class="btn-primary-custom"
+                style="padding:8px 18px;font-size:0.85rem;background:#f59e0b;border-color:#f59e0b;">
+                <i class="bi bi-bell-fill"></i> Reminders
+              </a>
+              <a href="{{ url_for('history') }}" class="btn-primary-custom"
+                style="padding:8px 18px;font-size:0.85rem;">
+                <i class="bi bi-clock-history"></i> Full History
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // ── Doughnut Chart ─────────────────────────────────────────────────────────
+  const ctx = document.getElementById('vaccineChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Completed', 'Overdue', 'Upcoming'],
+      datasets: [{
+        data: [{{ chart_data.completed }}, {{ chart_data.pending }}, {{ chart_data.upcoming }}],
+        backgroundColor: ['#10b981', '#ef4444', '#2563eb'],
+        borderWidth: 3,
+        borderColor: '#ffffff',
+        hoverBorderColor: '#ffffff',
+        hoverOffset: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '70%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            padding: 16,
+            font: { family: 'Inter', size: 12, weight: '600' },
+            usePointStyle: true,
+            pointStyle: 'circle'
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label(ctx) {
+              const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+              const pct = Math.round(ctx.parsed / total * 100);
+              return ` ${ctx.label}: ${ctx.parsed} (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // ── Reminder notification banner ───────────────────────────────────────────
+  async function loadReminders() {
+    try {
+      const resp = await fetch('{{ url_for("reminders_api") }}');
+      if (!resp.ok) return;
+      const data = await resp.json();
+      const due = data.filter(r => r.should_notify);
+      if (due.length > 0) {
+        document.getElementById('reminderBanner').style.display = '';
+        const overdue  = due.filter(r => r.is_overdue);
+        const upcoming = due.filter(r => !r.is_overdue);
+        let title = '🔔 Vaccine Reminder Alert';
+        if (overdue.length > 0 && upcoming.length === 0) {
+          title = `⚠️ ${overdue.length} Vaccine${overdue.length > 1 ? 's' : ''} Overdue!`;
+        } else if (overdue.length > 0) {
+          title = `⚠️ ${overdue.length} Overdue + ${upcoming.length} Due Soon`;
+        } else {
+          title = `🔔 ${upcoming.length} Vaccine Reminder${upcoming.length > 1 ? 's' : ''} Due Soon!`;
+        }
+        document.getElementById('reminderBannerTitle').textContent = title;
+        document.getElementById('reminderBannerText').textContent =
+          due.map(r => r.is_overdue
+            ? `${r.vaccine_name} (OVERDUE by ${Math.abs(r.days_until_due)} days)`
+            : `${r.vaccine_name} (in ${r.days_until_due} days)`
+          ).join(' · ');
+      }
+    } catch (e) { /* silently ignore */ }
+  }
+  loadReminders();
+
+  // ── Animate progress bar after load ───────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    const bar = document.querySelector('.progress-bar');
+    if (bar) {
+      const target = bar.style.width;
+      bar.style.width = '0%';
+      setTimeout(() => { bar.style.width = target; }, 300);
+    }
+  });
+</script>
+{% endblock %}

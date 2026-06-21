@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Vaccination History - SmartVax{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <div class="container">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <div>
+                    <h1 class="page-title"><i class="bi bi-clock-history text-primary"></i> Vaccination History</h1>
+                    <p class="page-subtitle">Your complete immunization record</p>
+                </div>
+                <a href="{{ url_for('download_report') }}" class="btn-success-custom">
+                    <i class="bi bi-file-earmark-pdf"></i> Download PDF
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        {% if completed_vaccines %}
+        <!-- Summary -->
+        <div class="dash-card mb-4 fade-in-up">
+            <div class="dash-card-body">
+                <div class="row g-3 text-center">
+                    <div class="col-4">
+                        <div style="font-size:2rem;font-weight:800;color:var(--secondary);">{{ completed_vaccines|length
+                            }}</div>
+                        <div style="font-size:0.8rem;color:var(--gray);">Total Completed</div>
+                    </div>
+                    <div class="col-4">
+                        <div style="font-size:2rem;font-weight:800;color:var(--primary);">
+                            {% if completed_vaccines[0].date_taken %}
+                            {{ completed_vaccines[0].date_taken.strftime('%b %Y') }}
+                            {% else %}N/A{% endif %}
+                        </div>
+                        <div style="font-size:0.8rem;color:var(--gray);">Most Recent</div>
+                    </div>
+                    <div class="col-4">
+                        <div style="font-size:2rem;font-weight:800;color:var(--accent);">✅</div>
+                        <div style="font-size:0.8rem;color:var(--gray);">All Verified</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="dash-card fade-in-up">
+            <div class="dash-card-header">
+                <span class="dash-card-title"><i class="bi bi-list-check text-success"></i> Completed Vaccines</span>
+            </div>
+            <div class="dash-card-body">
+                {% for uv in completed_vaccines %}
+                <div class="history-card fade-in-up" style="animation-delay: {{ loop.index0 * 0.05 }}s;">
+                    <div class="history-check">
+                        <i class="bi bi-check-lg"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div style="font-weight:700;font-size:0.925rem;color:var(--dark);">{{ uv.vaccine.vaccine_name }}
+                        </div>
+                        <div style="font-size:0.8rem;color:var(--gray);">
+                            Protects against: {{ uv.vaccine.disease_prevented or 'N/A' }}
+                            &nbsp;|&nbsp;
+                            <span class="cat-badge {{ uv.vaccine.category }}">{{ uv.vaccine.category }}</span>
+                        </div>
+                        {% if uv.notes %}
+                        <div style="font-size:0.78rem;color:var(--gray-light);margin-top:2px;font-style:italic;">📝 {{
+                            uv.notes }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="text-end flex-shrink-0">
+                        {% if uv.date_taken %}
+                        <div style="font-weight:700;font-size:0.875rem;color:var(--dark);">{{ uv.date_taken.strftime('%d
+                            %b %Y') }}</div>
+                        <div style="font-size:0.75rem;color:var(--gray);">{{ uv.date_taken.strftime('%A') }}</div>
+                        {% else %}
+                        <span class="text-muted small">Date not recorded</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% else %}
+        <div class="dash-card fade-in-up">
+            <div class="dash-card-body">
+                <div class="empty-state">
+                    <div class="empty-state-icon">💉</div>
+                    <div class="empty-state-title">No vaccination records yet</div>
+                    <div class="empty-state-desc mb-3">Start marking vaccines as completed in your schedule.</div>
+                    <a href="{{ url_for('schedule') }}" class="btn-primary-custom">
+                        <i class="bi bi-calendar3"></i> View Schedule
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

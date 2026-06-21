@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+
+{% block title %}SmartVax - AI Vaccination Tracking System{% endblock %}
+
+{% block content %}
+
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="hero-particles">
+        <div class="particle blob-1"></div>
+        <div class="particle blob-2"></div>
+        <div class="particle blob-3"></div>
+        <div class="particle blob-4"></div>
+    </div>
+
+    <div class="container py-5">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6 hero-content fade-in-up">
+                <div class="hero-badge">
+                    <i data-lucide="zap" style="width: 14px; height: 14px;"></i>
+                    AI-Powered Health Platform
+                </div>
+                <h1 class="hero-title">
+                    Smart Vaccination<br>
+                    Tracking <span class="gradient-text">& AI Insights</span>
+                </h1>
+                <p class="hero-desc">
+                    SmartVax uses advanced AI to personalize your vaccination schedule, predict missed doses, and keep
+                    your entire family protected from birth to adulthood.
+                </p>
+                <div class="hero-actions">
+                    <a href="{{ url_for('login') }}" class="btn-hero-primary">
+                        <i data-lucide="log-in" style="width: 20px; height: 20px;"></i>
+                        Login or Register
+                    </a>
+                    <a href="#features" class="btn-hero-secondary">
+                        <i class="bi bi-play-circle-fill"></i>
+                        See How It Works
+                    </a>
+                </div>
+                <div class="hero-stats">
+                    <div class="hero-stat-item">
+                        <span class="hero-stat-value">38+</span>
+                        <span class="hero-stat-label">Vaccines Tracked</span>
+                    </div>
+                    <div class="hero-stat-item">
+                        <span class="hero-stat-value">AI</span>
+                        <span class="hero-stat-label">Powered Engine</span>
+                    </div>
+                    <div class="hero-stat-item">
+                        <span class="hero-stat-value">100%</span>
+                        <span class="hero-stat-label">Free to Use</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6 hero-visual fade-in-up stagger-2">
+                <div class="hero-card-container">
+                    <!-- Main Card -->
+                    <div class="hero-main-card">
+                        <div class="d-flex align-items-center gap-3 mb-4">
+                            <div
+                                style="width:48px;height:48px;background:linear-gradient(135deg,#3b82f6,#10b981);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;">
+                                🛡️
+                            </div>
+                            <div>
+                                <div style="font-weight:700;font-size:1rem;">Vaccine Dashboard</div>
+                                <div style="font-size:0.8rem;opacity:0.7;">Real-time tracking</div>
+                            </div>
+                            <div class="ms-auto">
+                                <span
+                                    style="background:rgba(74,222,128,0.2);color:#4ade80;padding:4px 10px;border-radius:50px;font-size:0.75rem;font-weight:700;">✓
+                                    Active</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-2" style="font-size:0.8rem;opacity:0.8;">
+                                <span>Completion Rate</span>
+                                <span>78%</span>
+                            </div>
+                            <div
+                                style="height:8px;background:rgba(255,255,255,0.15);border-radius:50px;overflow:hidden;">
+                                <div
+                                    style="width:78%;height:100%;background:linear-gradient(90deg,#3b82f6,#10b981);border-radius:50px;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 text-center mb-3">
+                            <div class="col-4">
+                                <div style="background:rgba(74,222,128,0.15);border-radius:10px;padding:12px 6px;">
+                                    <div style="font-size:1.4rem;font-weight:800;color:#4ade80;">24</div>
+                                    <div style="font-size:0.7rem;opacity:0.7;">Completed</div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div style="background:rgba(251,191,36,0.15);border-radius:10px;padding:12px 6px;">
+                                    <div style="font-size:1.4rem;font-weight:800;color:#fbbf24;">5</div>
+                                    <div style="font-size:0.7rem;opacity:0.7;">Pending</div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div style="background:rgba(96,165,250,0.15);border-radius:10px;padding:12px 6px;">
+                                    <div style="font-size:1.4rem;font-weight:800;color:#60a5fa;">3</div>
+                                    <div style="font-size:0.7rem;opacity:0.7;">Upcoming</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="background:rgba(255,255,255,0.08);border-radius:10px;padding:12px;">
+                            <div style="font-size:0.8rem;font-weight:600;margin-bottom:8px;opacity:0.9;">🤖 AI
+                                Prediction</div>
+                            <div style="font-size:0.85rem;font-weight:700;color:#4ade80;">✅ Low Risk — Good progress!
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mini Card 1 -->
+                    <div class="hero-mini-card">
+                        <div class="mini-icon" style="background:rgba(74,222,128,0.2);color:#4ade80;">✅</div>
+                        <div>
+                            <div style="font-size:0.8rem;opacity:0.8;">Next Vaccine</div>
+                            <div style="font-weight:700;">MMR - Due in 14 days</div>
+                        </div>
+                    </div>
+
+                    <!-- Mini Card 2 -->
+                    <div class="hero-mini-card">
+                        <div class="mini-icon" style="background:rgba(96,165,250,0.2);color:#60a5fa;">🤖</div>
+                        <div>
+                            <div style="font-size:0.8rem;opacity:0.8;">AI Chatbot</div>
+                            <div style="font-weight:700;">Ready to assist</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="stats-section">
+    <div class="container">
+        <div class="row g-4 text-center">
+            <div class="col-6 col-md-3 fade-in-up stagger-1">
+                <div class="stat-item">
+                    <span class="stat-number">38+</span>
+                    <p class="stat-label">Vaccines in Database</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 fade-in-up stagger-2">
+                <div class="stat-item">
+                    <span class="stat-number">Birth–Adult</span>
+                    <p class="stat-label">Complete Lifetime Coverage</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 fade-in-up stagger-3">
+                <div class="stat-item">
+                    <span class="stat-number">99%</span>
+                    <p class="stat-label">AI Prediction Accuracy</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 fade-in-up stagger-4">
+                <div class="stat-item">
+                    <span class="stat-number">24/7</span>
+                    <p class="stat-label">AI Chatbot Support</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features-section" id="features">
+    <div class="container">
+        <div class="section-header fade-in-up">
+            <div class="section-tag"><i class="bi bi-lightning-charge-fill"></i> Core Features</div>
+            <h2 class="section-title">Everything You Need for Complete Vaccine Management</h2>
+            <p class="section-desc">From smart scheduling to AI-powered insights, SmartVax makes vaccination tracking
+                effortless.</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4 fade-in-up stagger-1">
+                <div class="feature-card">
+                    <div class="feature-icon" style="background:#dbeafe;">🗓️</div>
+                    <h3 class="feature-title">Smart Vaccine Scheduling</h3>
+                    <p class="feature-desc">Automatically tracks all vaccines from birth through adulthood with
+                        age-appropriate scheduling tailored to your profile.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 fade-in-up stagger-2">
+                <div class="feature-card">
+                    <div class="feature-icon" style="background:#d1fae5;">🤖</div>
+                    <h3 class="feature-title">AI Recommendations Engine</h3>
+                    <p class="feature-desc">Our ML-powered engine analyzes your age, history, and vaccination gaps to
+                        deliver personalized vaccine recommendations.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 fade-in-up stagger-3">
+                <div class="feature-card">
+                    <div class="feature-icon" style="background:#ede9fe;">⚠️</div>
+                    <h3 class="feature-title">Missed Dose Predictor</h3>
+                    <p class="feature-desc">RandomForest ML classifier predicts your risk of missing upcoming vaccines,
+                        so you can act before it's too late.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 fade-in-up stagger-1">
+                <div class="feature-card">
+                    <div class="feature-icon" style="background:#fef3c7;">💬</div>
+                    <h3 class="feature-title">NLP AI Chatbot</h3>
+                    <p class="feature-desc">Ask our smart chatbot any vaccine-related question — from safety to
+                        schedules to what happens if you miss a dose.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 fade-in-up stagger-2">
+                <div class="feature-card">
+                    <div class="feature-icon" style="background:#fce7f3;">📊</div>
+                    <h3 class="feature-title">Visual Analytics & Charts</h3>
+                    <p class="feature-desc">Beautiful data visualizations showing your vaccination completion status,
+                        progress, and trends over time.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 fade-in-up stagger-3">
+                <div class="feature-card">
+                    <div class="feature-icon" style="background:#e0f2fe;">📄</div>
+                    <h3 class="feature-title">PDF Report Download</h3>
+                    <p class="feature-desc">Generate and download a complete vaccination report in PDF format for
+                        medical appointments or record-keeping.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works -->
+<section class="py-6" style="padding:5rem 0;background:var(--bg);">
+    <div class="container">
+        <div class="section-header fade-in-up">
+            <div class="section-tag"><i class="bi bi-signpost-2-fill"></i> How It Works</div>
+            <h2 class="section-title">Up & Running in 3 Simple Steps</h2>
+        </div>
+        <div class="row g-4 align-items-center">
+            <div class="col-md-4 text-center fade-in-up stagger-1">
+                <div
+                    style="width:80px;height:80px;background:linear-gradient(135deg,var(--primary),var(--accent));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;color:white;margin:0 auto 1.5rem;box-shadow:0 8px 30px rgba(37,99,235,0.3);">
+                    <i data-lucide="user-plus"></i>
+                </div>
+                <h4 style="font-size:1.1rem;font-weight:700;margin-bottom:0.75rem;">Create Your Profile</h4>
+                <p style="color:var(--gray);font-size:0.9rem;line-height:1.7;">Register with your date of birth and
+                    optionally add your child's profile for family-wide tracking.</p>
+            </div>
+            <div class="col-md-4 text-center fade-in-up stagger-2">
+                <div
+                    style="width:80px;height:80px;background:linear-gradient(135deg,var(--secondary),var(--secondary-dark));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;color:white;margin:0 auto 1.5rem;box-shadow:0 8px 30px rgba(16,185,129,0.3);">
+                    <i data-lucide="activity"></i>
+                </div>
+                <h4 style="font-size:1.1rem;font-weight:700;margin-bottom:0.75rem;">Track Your Vaccines</h4>
+                <p style="color:var(--gray);font-size:0.9rem;line-height:1.7;">Mark vaccines as completed, view your
+                    personalized schedule, and see what's coming next.</p>
+            </div>
+            <div class="col-md-4 text-center fade-in-up stagger-3">
+                <div
+                    style="width:80px;height:80px;background:linear-gradient(135deg,var(--accent),#7c3aed);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;color:white;margin:0 auto 1.5rem;box-shadow:0 8px 30px rgba(99,102,241,0.3);">
+                    <i data-lucide="brain-circuit"></i>
+                </div>
+                <h4 style="font-size:1.1rem;font-weight:700;margin-bottom:0.75rem;">Get AI Insights</h4>
+                <p style="color:var(--gray);font-size:0.9rem;line-height:1.7;">Receive personalized AI recommendations,
+                    risk assessments, and ask our chatbot any vaccine question.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+    <div class="container">
+        <div class="cta-card fade-in-up">
+            <div style="font-size:3rem;margin-bottom:1rem;">🛡️</div>
+            <h2 style="font-size:2rem;font-weight:800;color:var(--dark);margin-bottom:1rem;">Ready to Protect Your
+                Health?</h2>
+            <p style="color:var(--gray);font-size:1rem;max-width:500px;margin:0 auto 2rem;line-height:1.8;">
+                Join SmartVax and never miss a vaccine again. AI-powered, personalized, and completely free.
+            </p>
+            <div class="d-flex gap-3 justify-content-center flex-wrap">
+                <a href="{{ url_for('login') }}" class="btn-hero-primary"
+                    style="background:linear-gradient(135deg,var(--primary),var(--accent));color:white;padding:14px 36px;border-radius:50px;font-weight:700;font-size:1rem;display:inline-flex;align-items:center;gap:8px;box-shadow:0 8px 30px rgba(37,99,235,0.3);transition:all 0.3s;">
+                    <i data-lucide="user-plus"></i> Login or Register
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

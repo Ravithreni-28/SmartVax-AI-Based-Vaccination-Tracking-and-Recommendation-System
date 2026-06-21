@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% block title %}Admin Panel - SmartVax{% endblock %}
+
+{% block scripts %}
+<script>
+    function triggerDemoNotif() {
+        if (Notification.permission === 'granted') {
+            new Notification("SmartVax Demo Alert", {
+                body: "This is how a real vaccine reminder will pop up on your computer!",
+                icon: "/static/img/icon-192.png"
+            });
+        } else {
+            alert("Please allow notifications first by clicking the Bell Icon!");
+            Notification.requestPermission();
+        }
+    }
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="page-title"><i data-lucide="shield-alert" class="text-primary"></i> Admin Panel</h1>
+                <p class="page-subtitle">Manage users, vaccines, and system settings</p>
+            </div>
+            <div class="d-flex gap-2">
+                <span class="badge bg-success-subtle text-success border border-success px-3 py-2 rounded-pill d-flex align-items-center gap-2">
+                    <span class="online-dot" style="width: 8px; height: 8px; background: #10b981; border-radius: 50%;"></span>
+                    AI Email Engine Active
+                </span>
+            </div>
+        </div>
+
+    <div class="container">
+        <!-- Admin Stats -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="admin-stat-card">
+                    <div style="font-size:2rem;font-weight:800;color:var(--primary);">{{ users|length }}</div>
+                    <div style="font-size:0.85rem;color:var(--gray);">Total Users</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="admin-stat-card">
+                    <div style="font-size:2rem;font-weight:800;color:var(--secondary);">{{ vaccines|length }}</div>
+                    <div style="font-size:0.85rem;color:var(--gray);">Total Vaccines</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="admin-stat-card">
+                    <div style="font-size:2rem;font-weight:800;color:var(--accent);">{{ total_vaccinations }}</div>
+                    <div style="font-size:0.85rem;color:var(--gray);">Vaccinations Done</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="admin-stat-card">
+                    <div style="font-size:2rem;font-weight:800;color:var(--danger);">{{ high_risk_count }}</div>
+                    <div style="font-size:0.85rem;color:var(--gray);">High Risk Predictions</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Add Vaccine -->
+            <div class="col-lg-5">
+                <div class="dash-card">
+                    <div class="dash-card-header">
+                        <span class="dash-card-title"><i class="bi bi-plus-circle-fill text-success"></i> Add New
+                            Vaccine</span>
+                    </div>
+                    <div class="dash-card-body">
+                        <form method="POST" action="{{ url_for('admin_add_vaccine') }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="form-group mb-3">
+                                <label class="form-label">Vaccine Name *</label>
+                                <input type="text" class="form-control" name="vaccine_name" required
+                                    placeholder="e.g., Typhoid Vaccine">
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label">Recommended Age (months) *</label>
+                                    <input type="number" class="form-control" name="recommended_age_months" min="0"
+                                        max="960" required placeholder="e.g., 24">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">Dose Number</label>
+                                    <input type="number" class="form-control" name="dose_number" min="1" max="10"
+                                        value="1">
+                                </div>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label class="form-label">Disease Prevented</label>
+                                <input type="text" class="form-control" name="disease_prevented"
+                                    placeholder="e.g., Typhoid Fever">
+                            </div>
+                            <div class="form-group mb-3">
+                                <label class="form-label">Category</label>
+                                <select class="form-select" name="category">
+                                    <option value="Mandatory">Mandatory</option>
+                                    <option value="Recommended" selected>Recommended</option>
+                                </select>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label class="form-label">Description</label>
+                                <textarea class="form-control" name="description" rows="2"
+                                    placeholder="Brief description..."></textarea>
+                            </div>
+                            <button type="submit" class="btn-primary-custom w-100">
+                                <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Add Vaccine
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- System Maintenance -->
+                <div class="dash-card">
+                    <div class="dash-card-header">
+                        <span class="dash-card-title"><i data-lucide="settings" class="text-secondary"></i> System Maintenance</span>
+                    </div>
+                    <div class="dash-card-body">
+                        <div class="d-flex align-items-center justify-content-between p-3 border rounded-3 bg-light mb-3">
+                            <div>
+                                <div style="font-weight:700; font-size:0.9rem;">Email Dispatcher</div>
+                                <div style="font-size:0.75rem; color:var(--gray);">Manually trigger the scan for all pending reminders</div>
+                            </div>
+                            <form action="{{ url_for('trigger_reminders_manual') }}" method="POST">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-outline-primary fw-bold px-3">
+                                    Run Scan Now
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <div class="d-flex align-items-center justify-content-between p-3 border rounded-3 bg-light mb-3">
+                            <div>
+                                <div style="font-weight:700; font-size:0.9rem;">SMTP Connection Test</div>
+                                <div style="font-size:0.75rem; color:var(--gray);">Verify email connectivity</div>
+                            </div>
+                            <form action="{{ url_for('test_email_config') }}" method="POST">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-outline-secondary fw-bold px-3">Test SMTP</button>
+                            </form>
+                        </div>
+
+                        
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users List -->
+            <div class="col-lg-7">
+                <div class="dash-card mb-4">
+                    <div class="dash-card-header">
+                        <span class="dash-card-title"><i class="bi bi-people-fill text-primary"></i> Registered
+                            Users</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table mb-0" style="font-size:0.85rem;">
+                            <thead style="background:var(--bg);">
+                                <tr>
+                                    <th style="padding:0.75rem;color:var(--gray);font-weight:600;">#</th>
+                                    <th style="padding:0.75rem;">Name</th>
+                                    <th style="padding:0.75rem;">Contact Info</th>
+                                    <th style="padding:0.75rem;">Role</th>
+                                    <th style="padding:0.75rem;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for u in users %}
+                                <tr>
+                                    <td style="padding:0.75rem;color:var(--gray);">{{ loop.index }}</td>
+                                    <td style="padding:0.75rem;font-weight:600;">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div
+                                                style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));color:white;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;">
+                                                {{ u.name[0].upper() }}
+                                            </div>
+                                            {{ u.name }}
+                                        </div>
+                                    </td>
+                                    <td style="padding:0.75rem;">
+                                        <div style="font-weight:600; color:var(--dark);">{{ u.email }}</div>
+                                        <div style="font-size:0.75rem; color:var(--gray);">{{ u.phone_number or 'No phone' }}</div>
+                                    </td>
+                                    <td style="padding:0.75rem;">
+                                        <span class="status-badge {{ 'completed' if u.role == 'admin' else 'upcoming' }}" style="font-size:0.7rem;">
+                                            {{ u.role }}
+                                        </span>
+                                    </td>
+                                    <td style="padding:0.75rem;">
+                                        {% if u.phone_number %}
+                                        <a href="https://wa.me/{{ u.phone_number|replace(' ', '')|replace('+', '') }}?text=Hi%20{{ u.name }},%20this%20is%20a%20reminder%20from%20SmartVax%20about%20your%20upcoming%20vaccinations." 
+                                           target="_blank" class="btn btn-sm btn-success py-0 px-2" style="font-size:0.7rem;">
+                                            <i class="bi bi-whatsapp"></i> WhatsApp
+                                        </a>
+                                        {% else %}
+                                        <span class="text-muted" style="font-size:0.65rem;">Offline</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Vaccine List -->
+                <div class="dash-card">
+                    <div class="dash-card-header">
+                        <span class="dash-card-title"><i class="bi bi-list-ul text-info"></i> Vaccine Database</span>
+                        <span class="status-badge upcoming">{{ vaccines|length }} total</span>
+                    </div>
+                    <div style="max-height:300px;overflow-y:auto;">
+                        <table class="table mb-0" style="font-size:0.8rem;">
+                            <thead style="background:var(--bg);position:sticky;top:0;">
+                                <tr>
+                                    <th style="padding:0.6rem;">Vaccine</th>
+                                    <th style="padding:0.6rem;">Age</th>
+                                    <th style="padding:0.6rem;">Category</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for v in vaccines %}
+                                <tr>
+                                    <td style="padding:0.6rem;font-weight:600;">{{ v.vaccine_name }}</td>
+                                    <td style="padding:0.6rem;">{{ v.get_recommended_age_display() }}</td>
+                                    <td style="padding:0.6rem;">
+                                        <span class="cat-badge {{ v.category }}">{{ v.category }}</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

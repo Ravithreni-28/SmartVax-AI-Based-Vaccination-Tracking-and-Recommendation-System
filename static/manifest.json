@@ -1,0 +1,21 @@
+{
+  "name": "SmartVax - AI Health Platform",
+  "short_name": "SmartVax",
+  "description": "AI-Based Vaccination Tracking and Recommendation System",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/static/img/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/img/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+{% block title %}Vaccine Reminders - SmartVax{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="container">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <h1 class="page-title">
+                        <i class="bi bi-bell-fill text-primary"></i> Vaccine Reminders
+                    </h1>
+                    <p class="page-subtitle">
+                        Stay on schedule — manage your vaccine notification preferences
+                    </p>
+                </div>
+                <div class="d-flex gap-2 flex-wrap align-items-center">
+                    <span class="status-badge upcoming">
+                        <i class="bi bi-bell-fill"></i> {{ active_count }} Active Reminder{{ 's' if active_count != 1 else '' }}
+                    </span>
+                    <span class="status-badge overdue">
+                        <i class="bi bi-exclamation-triangle-fill"></i> {{ total_pending }} Pending Vaccine{{ 's' if total_pending != 1 else '' }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <!-- Info Banner -->
+        <div class="dash-card mb-4 fade-in-up stagger-1"
+            style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-left: 4px solid var(--primary);">
+            <div class="dash-card-body d-flex align-items-center gap-3 flex-wrap">
+                <div style="font-size: 2rem;">🔔</div>
+                <div>
+                    <div style="font-weight: 700; font-size: 0.95rem; color: var(--primary);">How Reminders Work</div>
+                    <div style="font-size: 0.85rem; color: var(--dark-3);">
+                        Set reminders for any pending vaccine. Configure how many days in advance you want to be notified
+                        and your preferred notification time. Active reminders will be flagged on your dashboard.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if reminder_items %}
+
+        <!-- Reminder Cards Grid -->
+        <div class="row g-3">
+            {% for item in reminder_items %}
+            <div class="col-12 col-md-6 col-xl-4 fade-in-up stagger-{{ loop.index % 4 + 1 }}" id="card-{{ item.vaccine.id }}" data-vaccine-id="{{ item.vaccine.id }}">
+                <div class="dash-card h-100 reminder-card {% if item.reminder and item.reminder.is_active %}reminder-active{% endif %}">
+
+                    <!-- Card Top Bar -->
+                    <div class="reminder-top-bar" style="height: 4px; border-radius: 12px 12px 0 0;
+                        background: {% if item.reminder and item.reminder.is_active %}linear-gradient(90deg, #2563eb, #10b981){% elif item.status_class == 'overdue' %}var(--danger){% else %}var(--primary){% endif %};"></div>
+
+                    <div class="dash-card-body">
+                        <!-- Header Row -->
+                        <div class="d-flex align-items-start justify-content-between gap-2 mb-3">
+                            <div>
+                                <div style="font-weight: 700; font-size: 0.95rem; color: var(--dark);">
+                                    {{ item.vaccine.vaccine_name }}
+                                </div>
+                                <div style="font-size: 0.78rem; color: var(--gray);">
+                                    {{ item.vaccine.get_recommended_age_display() }}
+                                    {% if item.vaccine.disease_prevented %}
+                                    · {{ item.vaccine.disease_prevented }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <span class="status-badge {{ item.status_class }}" style="white-space:nowrap; font-size:0.72rem;">
+                                {% if item.status_class == 'overdue' %}⚠️{% else %}📅{% endif %}
+                                {{ item.status_label }}
+                                {% if item.months_diff < 0 %}
+                                    {% set m = (-item.months_diff)|int %}
+                                    ({% if m >= 24 %}{{ (m/12)|int }} yrs{% elif m >= 12 %}1 yr{% else %}{{ m }}m{% endif %} ago)
+                                {% else %}
+                                    {% set m = item.months_diff|int %}
+                                    (in {% if m >= 24 %}{{ (m/12)|int }} yrs{% elif m >= 12 %}1 yr{% else %}{{ m }}m{% endif %})
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <!-- Reminder Status -->
+                        {% if item.reminder %}
+                        <div class="reminder-status-box {% if item.reminder.is_active %}active{% else %}paused{% endif %} mb-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi {% if item.reminder.is_active %}bi-bell-fill text-primary{% else %}bi-bell-slash text-muted{% endif %}"></i>
+                                <div class="flex-grow-1">
+                                    <div style="font-weight: 600; font-size: 0.82rem;">
+                                        {% if item.reminder.is_active %}Reminder Active{% else %}Reminder Paused{% endif %}
+                                    </div>
+                                    <div style="font-size: 0.75rem; color: var(--gray);">
+                                        {{ item.reminder.days_before }} day{{ 's' if item.reminder.days_before != 1 else '' }} before · {{ item.reminder.notify_time }}
+                                    </div>
+                                    {% if item.reminder.scheduled_date %}
+                                    <div style="font-size: 0.75rem; color: var(--primary); margin-top: 3px; font-weight: 600;">
+                                        <i class="bi bi-calendar-check-fill me-1"></i>
+                                        Appt: {{ item.reminder.scheduled_date.strftime('%d %b %Y') }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="ms-auto d-flex gap-1">
+                                    <!-- Toggle Button -->
+                                    <form method="POST" action="{{ url_for('toggle_reminder', reminder_id=item.reminder.id) }}" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-sm {% if item.reminder.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %}"
+                                            title="{% if item.reminder.is_active %}Pause{% else %}Activate{% endif %} reminder"
+                                            style="padding: 3px 8px; font-size: 0.75rem;">
+                                            <i class="bi {% if item.reminder.is_active %}bi-pause-fill{% else %}bi-play-fill{% endif %}"></i>
+                                        </button>
+                                    </form>
+                                    <!-- Delete Button -->
+                                    <form method="POST" action="{{ url_for('delete_reminder', reminder_id=item.reminder.id) }}" class="d-inline"
+                                        onsubmit="return confirm('Remove reminder for {{ item.vaccine.vaccine_name }}?')">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                            title="Delete reminder" style="padding: 3px 8px; font-size: 0.75rem;">
+                                            <i class="bi bi-trash3"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="reminder-status-box none mb-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-bell-slash text-muted"></i>
+                                <span style="font-size: 0.82rem; color: var(--gray);">No reminder set</span>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Set / Edit Reminder Form -->
+                        <button class="btn btn-sm w-100 {% if item.reminder %}btn-outline-primary{% else %}btn-primary{% endif %} reminder-toggle-btn"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#form-{{ item.vaccine.id }}"
+                            aria-expanded="false"
+                            style="font-size: 0.82rem; font-weight: 600;">
+                            <i class="bi {% if item.reminder %}bi-pencil-fill{% else %}bi-bell-plus{% endif %} me-1"></i>
+                            {% if item.reminder %}Edit Reminder{% else %}Set Reminder{% endif %}
+                        </button>
+
+                        <div class="collapse mt-3" id="form-{{ item.vaccine.id }}">
+                            <form method="POST" action="{{ url_for('set_reminder', vaccine_id=item.vaccine.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                                <!-- Appointment Date -->
+                                <div class="mb-2">
+                                    <label class="form-label" style="font-size: 0.8rem; font-weight: 600;">
+                                        <i class="bi bi-calendar-event me-1"></i>Appointment Date
+                                        <span style="font-weight:400; color:var(--gray);">(optional)</span>
+                                    </label>
+                                    <input type="date" class="form-control form-control-sm" name="scheduled_date"
+                                        id="appt-{{ item.vaccine.id }}"
+                                        value="{{ item.reminder.scheduled_date.strftime('%Y-%m-%d') if item.reminder and item.reminder.scheduled_date else '' }}"
+                                        min="{{ now.strftime('%Y-%m-%d') }}">
+                                    <div style="font-size:0.72rem;color:var(--gray);margin-top:3px;">
+                                        <i class="bi bi-info-circle"></i>
+                                        If set, reminder fires X days before this date. Leave blank to use age-based schedule.
+                                    </div>
+                                </div>
+
+                                <!-- Days Before -->
+                                <div class="mb-2">
+                                    <label class="form-label" style="font-size: 0.8rem; font-weight: 600;">
+                                        <i class="bi bi-clock me-1"></i>Remind me how many days before?
+                                    </label>
+                                    <select class="form-select form-select-sm" name="days_before" id="days-{{ item.vaccine.id }}">
+                                        {% for d in [1, 3, 7, 14, 30] %}
+                                        <option value="{{ d }}"
+                                            {% if item.reminder and item.reminder.days_before == d %}selected{% endif %}
+                                            {% if not item.reminder and d == 7 %}selected{% endif %}
+                                        >{{ d }} day{{ 's' if d != 1 else '' }} before</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <!-- Notification Time -->
+                                <div class="mb-3">
+                                    <label class="form-label" style="font-size: 0.8rem; font-weight: 600;">
+                                        <i class="bi bi-alarm me-1"></i>Notification Time
+                                    </label>
+                                    <input type="time" class="form-control form-control-sm" name="notify_time"
+                                        value="{{ item.reminder.notify_time if item.reminder else '09:00' }}">
+                                </div>
+
+                                <input type="hidden" name="is_active" value="true">
+                                <button type="submit" class="btn btn-success btn-sm w-100" style="font-size: 0.82rem; font-weight: 600;">
+                                    <i class="bi bi-check-circle-fill me-1"></i>
+                                    {% if item.reminder %}Update Reminder{% else %}Activate Reminder{% endif %}
+                                </button>
+                            </form>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% else %}
+        <!-- Empty State -->
+        <div class="dash-card fade-in-up">
+            <div class="dash-card-body text-center py-5">
+                <div style="font-size: 3.5rem; margin-bottom: 1rem;">🎉</div>
+                <div style="font-size: 1.2rem; font-weight: 700; color: var(--dark); margin-bottom: 0.5rem;">
+                    All vaccines completed!
+                </div>
+                <div style="font-size: 0.9rem; color: var(--gray); margin-bottom: 1.5rem;">
+                    You have no pending vaccines requiring reminders. Great job staying on schedule!
+                </div>
+                <a href="{{ url_for('schedule') }}" class="btn-primary-custom" style="padding: 10px 24px;">
+                    <i class="bi bi-calendar3"></i> View Full Schedule
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Summary Card -->
+        {% if active_count > 0 %}
+        <div class="dash-card mt-4 fade-in-up"
+            style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-left: 4px solid var(--secondary);">
+            <div class="dash-card-body d-flex align-items-center gap-3 flex-wrap">
+                <div style="font-size: 2rem;">✅</div>
+                <div>
+                    <div style="font-weight: 700; font-size: 0.95rem; color: var(--secondary);">
+                        {{ active_count }} Active Reminder{{ 's' if active_count != 1 else '' }} Configured
+                    </div>
+                    <div style="font-size: 0.83rem; color: var(--dark-3);">
+                        Your reminders are set. Check your dashboard for real-time notification alerts when vaccines are due soon.
+                    </div>
+                </div>
+                <a href="{{ url_for('dashboard') }}" class="ms-auto btn-primary-custom" style="padding: 8px 20px; font-size: 0.85rem;">
+                    <i class="bi bi-speedometer2"></i> Go to Dashboard
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+    .reminder-card {
+        transition: box-shadow 0.25s ease, transform 0.25s ease;
+        border: 1px solid var(--border);
+    }
+    .reminder-card:hover {
+        box-shadow: 0 8px 30px rgba(37, 99, 235, 0.12);
+        transform: translateY(-2px);
+    }
+    .reminder-card.reminder-active {
+        border-color: rgba(37, 99, 235, 0.3);
+    }
+    .reminder-status-box {
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid transparent;
+    }
+    .reminder-status-box.active {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+    }
+    .reminder-status-box.paused {
+        background: #fafafa;
+        border-color: #e5e7eb;
+    }
+    .reminder-status-box.none {
+        background: #f9fafb;
+        border-color: #e5e7eb;
+    }
+    .reminder-due-highlight {
+        box-shadow: 0 0 0 2px #f59e0b, 0 8px 30px rgba(245, 158, 11, 0.25) !important;
+        animation: pulse-border 1.8s ease-in-out infinite;
+    }
+    .reminder-due-highlight.reminder-active {
+        border-color: #f59e0b !important;
+    }
+    @keyframes pulse-border {
+        0%, 100% { box-shadow: 0 0 0 2px #f59e0b, 0 8px 30px rgba(245, 158, 11, 0.25); }
+        50% { box-shadow: 0 0 0 4px #f59e0b, 0 8px 40px rgba(245, 158, 11, 0.4); }
+    }
+    .reminder-toggle-btn {
+        border-radius: 8px !important;
+        transition: all 0.2s ease;
+    }
+</style>
+
+<script>
+    // Check reminders via API on page load and highlight due-soon ones
+    async function checkDueReminders() {
+        try {
+            const resp = await fetch('{{ url_for("reminders_api") }}');
+            const data = await resp.json();
+
+            const due = data.filter(r => r.should_notify);
+            const overdue = due.filter(r => r.is_overdue);
+            const upcoming = due.filter(r => !r.is_overdue);
+
+            due.forEach(r => {
+                // Highlight card by vaccine_id (matches the card's data-vaccine-id)
+                const card = document.querySelector(`[data-vaccine-id="${r.vaccine_id}"]`);
+                if (card) {
+                    card.classList.add('reminder-due-highlight');
+                    const bar = card.querySelector('.reminder-top-bar');
+                    if (bar) {
+                        bar.style.background = r.is_overdue
+                            ? 'linear-gradient(90deg, #ef4444, #f97316)'
+                            : 'linear-gradient(90deg, #f59e0b, #10b981)';
+                    }
+                }
+            });
+
+            if (due.length > 0) {
+                let msg = '';
+                if (overdue.length > 0) {
+                    msg += `⚠️ ${overdue.length} vaccine${overdue.length > 1 ? 's are' : ' is'} OVERDUE! `;
+                }
+                if (upcoming.length > 0) {
+                    msg += `🔔 ${upcoming.length} reminder${upcoming.length > 1 ? 's' : ''} due soon.`;
+                }
+                SmartVax.toast(msg.trim(), 'warning');
+
+            }
+        } catch (e) {
+            // silently ignore
+        }
+    }
+
+    checkDueReminders();
+
+</script>
+{% endblock %}

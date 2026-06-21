@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="SmartVax - AI-Based Vaccination Tracking and Recommendation System">
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <title>{% block title %}SmartVax - AI Vaccination Tracker{% endblock %}</title>
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+ Broadway
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+  {% block head_extra %}{% endblock %}
+
+  <style>
+    /* ── Toast Notification System ── */
+    #toastContainer {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 380px;
+      pointer-events: none;
+    }
+    .sv-toast {
+      background: #1e293b;
+      color: #f1f5f9;
+      border-radius: 12px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+      border-left: 4px solid #2563eb;
+      animation: toastSlideIn 0.35s cubic-bezier(.22,1,.36,1) forwards;
+      pointer-events: all;
+      min-width: 300px;
+    }
+    .sv-toast.success { border-left-color: #10b981; }
+    .sv-toast.danger  { border-left-color: #ef4444; }
+    .sv-toast.warning { border-left-color: #f59e0b; }
+    .sv-toast.info    { border-left-color: #3b82f6; }
+    .sv-toast-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+    .sv-toast-body { flex: 1; }
+    .sv-toast-title { font-weight: 700; font-size: 0.82rem; text-transform: uppercase;
+      letter-spacing: 0.04em; margin-bottom: 2px; opacity: 0.7; }
+    .sv-toast-msg  { font-size: 0.9rem; line-height: 1.4; }
+    .sv-toast-close { background: none; border: none; color: #94a3b8; cursor: pointer;
+      font-size: 1rem; padding: 0; flex-shrink: 0; }
+    .sv-toast-progress {
+      position: absolute; bottom: 0; left: 0; height: 3px; border-radius: 0 0 12px 12px;
+      background: rgba(255,255,255,0.3); animation: toastProgress 4s linear forwards;
+    }
+    @keyframes toastSlideIn {
+      from { transform: translateX(110%); opacity: 0; }
+      to   { transform: translateX(0);    opacity: 1; }
+    }
+    @keyframes toastSlideOut {
+      from { transform: translateX(0);    opacity: 1; }
+      to   { transform: translateX(110%); opacity: 0; }
+    }
+    @keyframes toastProgress {
+      from { width: 100%; }
+      to   { width: 0%; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ══ TOAST CONTAINER ══ -->
+  <div id="toastContainer"></div>
+
+  <!-- ══ FLASH → TOAST (server-side flash messages rendered as toasts) ══ -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const toasts = [
+        {% for category, message in messages %}
+        { type: '{{ category }}', msg: {{ message | tojson }} },
+        {% endfor %}
+      ];
+      toasts.forEach(t => SmartVax.toast(t.msg, t.type));
+    });
+  </script>
+  {% endif %}
+  {% endwith %}
+
+  <!-- ══ NAVBAR ══ -->
+  <nav class="navbar navbar-expand-lg smartvax-navbar">
+    <div class="container">
+      <a class="navbar-brand" href="{{ url_for('index') }}">
+        <span class="brand-icon"><i data-lucide="shield-check"></i></span>
+        SmartVax
+      </a>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navMenu">
+        {% if current_user.is_authenticated %}
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}"
+              href="{{ url_for('dashboard') }}">
+              <i class="bi bi-speedometer2"></i> Dashboard
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'schedule' %}active{% endif %}"
+              href="{{ url_for('schedule') }}">
+              <i class="bi bi-calendar3"></i> Schedule
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'history' %}active{% endif %}"
+              href="{{ url_for('history') }}">
+              <i class="bi bi-clock-history"></i> History
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'recommendations' %}active{% endif %}"
+              href="{{ url_for('recommendations') }}">
+              <i class="bi bi-stars"></i> AI Recs
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'chatbot_page' %}active{% endif %}"
+              href="{{ url_for('chatbot_page') }}">
+              <i class="bi bi-chat-dots-fill"></i> Chatbot
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'reminders_page' %}active{% endif %}"
+              href="{{ url_for('reminders_page') }}">
+              <i class="bi bi-bell-fill"></i> Reminders
+            </a>
+          </li>
+          {% if current_user.role == 'admin' %}
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('admin_panel') }}">
+              <i class="bi bi-shield-lock"></i> Admin
+            </a>
+          </li>
+          {% endif %}
+        </ul>
+        <ul class="navbar-nav ms-auto align-items-center gap-2">
+          <!-- Notification Bell -->
+          <li class="nav-item dropdown me-2">
+            <a class="nav-link position-relative" href="#" data-bs-toggle="dropdown" onclick="if(Notification.permission==='default') Notification.requestPermission();">
+              <i data-lucide="bell" style="width: 20px; height: 20px;"></i>
+              <span id="notifBadge" class="position-absolute top-10 start-90 translate-middle badge rounded-pill bg-danger d-none" style="font-size: 0.6rem; padding: 0.3em 0.4em;">0</span>
+            </a>
+            <div class="dropdown-menu dropdown-menu-end p-0 shadow-lg border-0" style="width: 280px; border-radius: 12px;">
+              <div class="p-2 border-bottom d-flex justify-content-between align-items-center bg-light"><span class="fw-bold small ms-2">Alerts</span><a href="#" id="markAllRead" class="small me-2">Dismiss all</a></div>
+              <div id="notifList" style="max-height: 250px; overflow: auto;"><div class="p-3 text-center small text-muted">Checking...</div></div>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('download_report') }}" title="Download PDF Report">
+              <i class="bi bi-file-earmark-pdf"></i> Report
+            </a>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" data-bs-toggle="dropdown" onclick="if(Notification.permission==='default') Notification.requestPermission();">
+              <div class="d-flex align-items-center justify-content-center rounded-circle bg-primary text-white"
+                style="width:32px;height:32px;font-size:0.8rem;font-weight:700;">
+                {{ current_user.name[0].upper() }}
+              </div>
+              {{ current_user.name.split()[0] }}
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><span class="dropdown-item-text text-muted small">{{ current_user.email }}</span></li>
+              {% if current_user.last_login %}
+              <li><span class="dropdown-item-text text-muted" style="font-size:0.75rem;">
+                Last login: {{ current_user.last_login.strftime('%d %b, %H:%M') }}
+              </span></li>
+              {% endif %}
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="{{ url_for('logout') }}">
+                <i class="bi bi-box-arrow-right me-2"></i>Logout</a>
+              </li>
+            </ul>
+          </li>
+        </ul>
+        {% else %}
+        <ul class="navbar-nav ms-auto align-items-center gap-2">
+          <li class="nav-item">
+            <a class="nav-link nav-btn-login" href="{{ url_for('login') }}">Login</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link nav-btn-register" href="{{ url_for('register') }}">Get Started</a>
+          </li>
+        </ul>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <!-- ══ PAGE CONTENT ══ -->
+  {% block content %}{% endblock %}
+
+  <!-- ══ FOOTER ══ -->
+  {% block footer %}
+  <footer class="site-footer">
+    <div class="container">
+      <div class="row g-4">
+        <div class="col-lg-4">
+          <div class="footer-brand d-flex align-items-center gap-2">
+            <span class="brand-icon" style="width:32px;height:32px;font-size:0.9rem;">
+              <i class="bi bi-shield-plus-fill"></i></span>
+            SmartVax
+          </div>
+          <p class="footer-desc">AI-powered vaccination tracking system helping individuals and families stay
+            protected through intelligent scheduling and personalized recommendations.</p>
+          <div class="footer-social">
+            <a href="#"><i class="bi bi-twitter-x"></i></a>
+            <a href="#"><i class="bi bi-facebook"></i></a>
+            <a href="#"><i class="bi bi-linkedin"></i></a>
+            <a href="#"><i class="bi bi-github"></i></a>
+          </div>
+        </div>
+        <div class="col-sm-4 col-lg-2 offset-lg-2">
+          <h6 class="footer-heading">Platform</h6>
+          {% if current_user.is_authenticated %}
+          <a href="{{ url_for('dashboard') }}" class="footer-link">Dashboard</a>
+          <a href="{{ url_for('schedule') }}" class="footer-link">Vaccine Schedule</a>
+          <a href="{{ url_for('history') }}" class="footer-link">History</a>
+          <a href="{{ url_for('recommendations') }}" class="footer-link">AI Recommendations</a>
+          <a href="{{ url_for('chatbot_page') }}" class="footer-link">AI Chatbot</a>
+          <a href="{{ url_for('reminders_page') }}" class="footer-link">Reminders</a>
+          {% else %}
+          <a href="{{ url_for('register') }}" class="footer-link">Get Started</a>
+          <a href="{{ url_for('login') }}" class="footer-link">Login</a>
+          {% endif %}
+        </div>
+        <div class="col-sm-4 col-lg-2">
+          <h6 class="footer-heading">Features</h6>
+          <span class="footer-link">Vaccine Tracking</span>
+          <span class="footer-link">AI Recommendations</span>
+          <span class="footer-link">Missed Dose Prediction</span>
+          <span class="footer-link">Health Chatbot</span>
+          <span class="footer-link">PDF Reports</span>
+          <span class="footer-link">Email Reminders</span>
+        </div>
+        <div class="col-sm-4 col-lg-2">
+          <h6 class="footer-heading">Support</h6>
+          <span class="footer-link">Documentation</span>
+          <span class="footer-link">FAQ</span>
+          <span class="footer-link">Healthcare Partners</span>
+          <span class="footer-link">Privacy Policy</span>
+        </div>
+      </div>
+      <hr class="footer-divider">
+      <div class="footer-copy">
+        <p>&copy; 2024 SmartVax. All rights reserved. &nbsp;|&nbsp;
+          <span class="text-muted">⚠️ For informational purposes only. Not a substitute for medical advice.</span>
+        </p>
+      </div>
+    </div>
+  </footer>
+  {% endblock %}
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- ══ GLOBAL SMARTVAX JS UTILITIES ══ -->
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Global SmartVax helper
+    window.SmartVax = {
+      // ── Toast notification system ──────────────────────────────────────
+      toast(message, type = 'info', duration = 4500) {
+        const container = document.getElementById('toastContainer');
+        const icons = {
+          success: '<i class="bi bi-check-circle-fill" style="color:#10b981"></i>',
+          danger:  '<i class="bi bi-x-circle-fill" style="color:#ef4444"></i>',
+          warning: '<i class="bi bi-exclamation-triangle-fill" style="color:#f59e0b"></i>',
+          info:    '<i class="bi bi-info-circle-fill" style="color:#3b82f6"></i>',
+        };
+        const titles = { success: 'Success', danger: 'Error', warning: 'Warning', info: 'Info' };
+
+        const toast = document.createElement('div');
+        toast.className = `sv-toast ${type}`;
+        toast.style.position = 'relative';
+        toast.innerHTML = `
+          <div class="sv-toast-icon">${icons[type] || icons.info}</div>
+          <div class="sv-toast-body">
+            <div class="sv-toast-title">${titles[type] || 'Notice'}</div>
+            <div class="sv-toast-msg">${message}</div>
+          </div>
+          <button class="sv-toast-close" onclick="SmartVax.closeToast(this.parentElement)">
+            <i class="bi bi-x"></i>
+          </button>
+          <div class="sv-toast-progress"></div>
+        `;
+        container.appendChild(toast);
+        // Auto-dismiss
+        const timer = setTimeout(() => SmartVax.closeToast(toast), duration);
+        toast._timer = timer;
+      },
+
+      closeToast(el) {
+        if (!el || !el.parentElement) return;
+        clearTimeout(el._timer);
+        el.style.animation = 'toastSlideOut 0.3s ease forwards';
+        setTimeout(() => el.remove(), 300);
+      },
+
+      // ── Loading spinner ────────────────────────────────────────────────
+      showSpinner(el, text = 'Loading…') {
+        if (!el) return;
+        el._originalHTML = el.innerHTML;
+        el.disabled = true;
+        el.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>${text}`;
+      },
+
+      hideSpinner(el) {
+        if (!el || !el._originalHTML) return;
+        el.disabled = false;
+        el.innerHTML = el._originalHTML;
+      },
+      initNotifications() {
+        const badge = document.getElementById('notifBadge');
+        if (!badge) return;
+        const fetchNotifs = () => {
+          fetch('/api/notifications').then(r => r.json()).then(data => {
+            if (data.unread_count > 0) {
+              if (window._lastCount !== undefined && data.unread_count > window._lastCount && Notification.permission === 'granted') {
+              new Notification('SmartVax Reminder', { body: 'You have vaccine tasks to check!', icon: '/static/img/icon-192.png' });
+            }
+            window._lastCount = data.unread_count;
+            badge.innerText = data.unread_count; badge.classList.remove('d-none');
+            } else { badge.classList.add('d-none'); }
+            const list = document.getElementById('notifList');
+            if (list) {
+              if (data.notifications.length === 0) list.innerHTML = '<div class="p-3 text-center text-muted small">No new alerts</div>';
+              else list.innerHTML = data.notifications.map(n => `<div class="p-3 border-bottom small ${n.is_read ? 'opacity-75' : 'bg-light'}"><b>${n.title}</b><div class="text-muted mt-1" style="font-size:0.75rem;">${n.message}</div></div>`).join('');
+            }
+          });
+        };
+        const mr = document.getElementById('markAllRead');
+        if (mr) mr.onclick = (e) => { e.preventDefault(); fetch('/api/notifications/read', { method: 'POST', headers: {'X-CSRFToken': '{{ csrf_token() }}'} }).then(() => fetchNotifs()); };
+        fetchNotifs(); setInterval(fetchNotifs, 60000);
+      }
+    };
+    SmartVax.initNotifications();
+  </script>
+
+  {% block scripts %}{% endblock %}
+</body>
+
+</html>
